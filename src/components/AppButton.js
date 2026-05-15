@@ -1,7 +1,12 @@
 import React from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import theme from "../utils/theme";
+
+const spring = theme.motion.springSnappy;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const variantStyles = {
   primary: {
@@ -36,6 +41,11 @@ export default function AppButton({
 }) {
   const current = variantStyles[variant] || variantStyles.primary;
   const isDisabled = disabled || loading;
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handlePress = async () => {
     if (isDisabled) return;
@@ -44,27 +54,39 @@ export default function AppButton({
   };
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: current.backgroundColor, borderColor: current.borderColor },
-        pressed && !isDisabled ? styles.pressed : null,
-        isDisabled ? styles.disabled : null,
-        style,
-      ]}
+      onPressIn={() => {
+        if (!isDisabled) scale.value = withSpring(0.96, spring);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, spring);
+      }}
+      style={[animatedStyle, styles.pressableOuter]}
       disabled={isDisabled}
     >
-      {loading ? (
-        <ActivityIndicator color={current.textColor} />
-      ) : (
-        <Text style={[styles.label, { color: current.textColor }]}>{title}</Text>
-      )}
-    </Pressable>
+      <Animated.View
+        style={[
+          styles.button,
+          { backgroundColor: current.backgroundColor, borderColor: current.borderColor },
+          isDisabled ? styles.disabled : null,
+          style,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={current.textColor} />
+        ) : (
+          <Text style={[styles.label, { color: current.textColor }]}>{title}</Text>
+        )}
+      </Animated.View>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressableOuter: {
+    alignSelf: "stretch",
+  },
   button: {
     height: 54,
     borderRadius: theme.radius.lg,
@@ -76,9 +98,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "700",
-  },
-  pressed: {
-    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.65,

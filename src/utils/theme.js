@@ -4,37 +4,49 @@
  */
 
 const colors = {
-  // Marque — teal profond + highlight cyan (distinct du précédent sky-blue)
-  primary: "#0d9488",
-  primaryBright: "#22d3ee",
-  primaryDark: "#0f766e",
-  primaryLight: "#ccfbf1",
-  secondary: "#059669",
-  secondaryLight: "#d1fae5",
+  // Marque — violet + vert forêt
+  primary: "#6d28d9",
+  primaryBright: "#8b5cf6",
+  primaryDark: "#5b21b6",
+  primaryLight: "#ede9fe",
+  secondary: "#166534",
+  secondaryLight: "#dcfce7",
+  brandViolet: "#6d28d9",
+  brandForest: "#166534",
+
+  // Sémantique dashboard — violet demandes, vert livraisons, bleu suivi
+  semanticRequest: "#7c3aed",
+  semanticRequestBg: "rgba(124, 58, 237, 0.12)",
+  semanticDelivery: "#166534",
+  semanticDeliveryBg: "rgba(22, 101, 52, 0.12)",
+  semanticTracking: "#2563eb",
+  semanticTrackingBg: "rgba(37, 99, 235, 0.12)",
+  semanticNeutral: "#64748b",
+  semanticNeutralBg: "rgba(100, 116, 139, 0.12)",
   danger: "#e11d48",
   dangerLight: "#ffe4e9",
   warning: "#d97706",
   warningLight: "#fef3c7",
 
-  // Neutres — fond plus doux, texte plus contrasté
-  background: "#eef2f8",
-  surface: "#f8fafc",
+  // Neutres — fond brume légère, cartes lumineuses
+  background: "#eef0fb",
+  surface: "#ffffff",
   white: "#ffffff",
   black: "#000000",
-  border: "#d6dee9",
+  border: "#e2e8f0",
   textPrimary: "#0f172a",
   textSecondary: "#475569",
-  textMuted: "#7c8ea3",
-  tabInactive: "#8b9caf",
+  textMuted: "#64748b",
+  tabInactive: "#94a3b8",
 
   // Slate / en-têtes sombres
   slate900: "#0f172a",
   slate100: "#f1f5f9",
   slate200: "#e2e8f0",
 
-  /** Ombre cartes — légère teinte teal foncée (plus lisible sur fond #eef2f8) */
-  cardShadow: "rgba(13, 67, 78, 0.12)",
-  shadowSlate: "#134e4a",
+  /** Ombre cartes — teinte violette (cohérente avec la marque) */
+  cardShadow: "rgba(91, 33, 182, 0.14)",
+  shadowSlate: "#5b21b6",
 
   // Badges / héros sur dégradé bleu
   overlayWhite22: "rgba(255,255,255,0.22)",
@@ -123,13 +135,13 @@ const spacing = {
 };
 
 const radius = {
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
-  xxl: 20,
-  xxxl: 26,
-  round: 21,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 20,
+  xxl: 24,
+  xxxl: 28,
+  round: 22,
   pill: 999,
 };
 
@@ -217,9 +229,37 @@ const shadows = {
 };
 
 const gradients = {
-  auth: [colors.primary, colors.primaryBright],
+  auth: [colors.primaryDark, colors.brandViolet, colors.brandForest],
+  hero: [colors.primaryDark, colors.brandViolet, colors.brandForest],
   profileBackground: [colors.profileBgOuter, colors.profileBgMid, colors.profileBgOuter],
   saveButton: [colors.saveGradientStart, colors.saveGradientEnd],
+};
+
+const typography = {
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: colors.textMuted,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+};
+
+/** Durées / ressorts pour react-native-reanimated */
+const motion = {
+  springSnappy: { damping: 16, stiffness: 280, mass: 0.8 },
+  springSoft: { damping: 18, stiffness: 200, mass: 1 },
+  enterDuration: 520,
+  stagger: 70,
 };
 
 const theme = {
@@ -228,6 +268,8 @@ const theme = {
   radius,
   shadows,
   gradients,
+  typography,
+  motion,
 };
 
 /** Accents navigation profil selon le rôle */

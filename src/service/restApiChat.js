@@ -1,8 +1,5 @@
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_CANDIDATES } from "./apiConfig";
-
-/** Aligné sur pfe-front-react/src/service/restApiChat.js */
+import { axiosWithBaseFallback } from "./apiClient";
 
 const CHAT_SUFFIX = "/api/chat";
 
@@ -16,22 +13,13 @@ async function getHeaders() {
 
 async function chatRequest(method, endpoint, data = undefined) {
   const headers = await getHeaders();
-  let lastError;
-
-  for (const baseURL of API_BASE_CANDIDATES) {
-    try {
-      return await axios({
-        method,
-        url: `${baseURL}${CHAT_SUFFIX}${endpoint}`,
-        data,
-        headers,
-        timeout: 20000,
-      });
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError;
+  return axiosWithBaseFallback((baseURL) => ({
+    method,
+    url: `${baseURL}${CHAT_SUFFIX}${endpoint}`,
+    data,
+    headers,
+    timeout: 20000,
+  }));
 }
 
 export const getConversations = () => chatRequest("get", "/conversations");

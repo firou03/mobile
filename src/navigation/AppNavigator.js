@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createDrawerNavigator } from "@react-navigation/drawer";
 
-import SplashScreen from "../screens/SplashScreen";
 import WelcomeScreen from "../screens/WelcomeScreen";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -20,11 +19,13 @@ import TrackingScreen from "../screens/TrackingScreen";
 import AdminNoticeScreen from "../screens/AdminNoticeScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import { AuthContext } from "../context/AuthContext";
+import AppDrawerContent from "../components/AppDrawerContent";
+import DrawerMenuButton from "../components/DrawerMenuButton";
 import theme from "../utils/theme";
 
 const RootStack = createStackNavigator();
 const AuthStack = createStackNavigator();
-const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 
@@ -91,165 +92,175 @@ function AuthNavigator() {
   );
 }
 
-function ClientTabs() {
+function AuthRootWithBootstrapOverlay() {
+  const { isRestoring } = React.useContext(AuthContext);
   return (
-    <Tab.Navigator
+    <View style={styles.authRoot}>
+      <AuthNavigator />
+      {isRestoring ? (
+        <View style={styles.bootstrapOverlay} pointerEvents="auto">
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function drawerScreenOptions(navigation, { darkHeader = false } = {}) {
+  return {
+    headerTitleAlign: "center",
+    headerStyle: darkHeader ? styles.headerStyleDark : styles.headerStyle,
+    headerLeft: () => <DrawerMenuButton navigation={navigation} variant={darkHeader ? "dark" : "default"} />,
+  };
+}
+
+function ClientAppDrawer() {
+  return (
+    <Drawer.Navigator
       initialRouteName="Home"
-      screenOptions={{
-        headerTitleAlign: "center",
-        headerStyle: styles.headerStyle,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.tabInactive,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
-      }}
+      drawerContent={(props) => <AppDrawerContent {...props} />}
+      screenOptions={({ navigation }) => ({
+        ...drawerScreenOptions(navigation),
+        drawerType: "front",
+        drawerStyle: styles.drawerPanel,
+        overlayColor: "rgba(15, 23, 42, 0.45)",
+        swipeEnabled: true,
+        swipeEdgeWidth: 48,
+      })}
     >
-      <Tab.Screen
+      <Drawer.Screen
         name="Home"
         component={HomeScreen}
         options={{
           title: "Accueil",
           headerTitle: () => <HeaderTitle title="Accueil" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🏠</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Client"
         component={ClientScreen}
         options={{
           title: "Demande",
           headerTitle: () => <HeaderTitle title="Créer une demande" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>📦</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="ClientRequests"
         component={ClientRequestsScreen}
         options={{
           title: "Mes demandes",
           headerTitle: () => <HeaderTitle title="Mes demandes" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>📄</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Tracking"
         component={TrackingScreen}
         options={{
           title: "Tracking",
           headerTitle: () => <HeaderTitle title="Suivi colis" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🗺️</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Chat"
         component={ChatScreen}
         options={{
           title: "Chat",
           headerTitle: () => <HeaderTitle title="Messagerie" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>💬</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Notifications"
         component={NotificationsScreen}
         options={{
           title: "Notifications",
           headerTitle: () => <HeaderTitle title="Notifications" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🔔</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{
+        options={({ navigation }) => ({
           title: "Profil",
           headerTitle: () => <HeaderTitleDark title="Profil" />,
-          headerStyle: styles.headerStyleDark,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>👤</Text>,
-        }}
+          ...drawerScreenOptions(navigation, { darkHeader: true }),
+        })}
       />
-    </Tab.Navigator>
+    </Drawer.Navigator>
   );
 }
 
-function TransporteurTabs() {
+function TransporteurAppDrawer() {
   return (
-    <Tab.Navigator
+    <Drawer.Navigator
       initialRouteName="Home"
-      screenOptions={{
-        headerTitleAlign: "center",
-        headerStyle: styles.headerStyle,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.tabInactive,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
-      }}
+      drawerContent={(props) => <AppDrawerContent {...props} />}
+      screenOptions={({ navigation }) => ({
+        ...drawerScreenOptions(navigation),
+        drawerType: "front",
+        drawerStyle: styles.drawerPanel,
+        overlayColor: "rgba(15, 23, 42, 0.45)",
+        swipeEnabled: true,
+        swipeEdgeWidth: 48,
+      })}
     >
-      <Tab.Screen
+      <Drawer.Screen
         name="Home"
         component={HomeScreen}
         options={{
           title: "Accueil",
           headerTitle: () => <HeaderTitle title="Accueil" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🏠</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Requests"
         component={RequestsScreen}
         options={{
           title: "Disponibles",
           headerTitle: () => <HeaderTitle title="Demandes disponibles" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🚚</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="MesRequests"
         component={MesRequestsScreen}
         options={{
           title: "Mes trajets",
           headerTitle: () => <HeaderTitle title="Mes trajets" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>✅</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Tracking"
         component={TrackingScreen}
         options={{
           title: "Tracking",
           headerTitle: () => <HeaderTitle title="Suivi colis" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🗺️</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Chat"
         component={ChatScreen}
         options={{
           title: "Chat",
           headerTitle: () => <HeaderTitle title="Messagerie" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>💬</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Notifications"
         component={NotificationsScreen}
         options={{
           title: "Notifications",
           headerTitle: () => <HeaderTitle title="Notifications" />,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🔔</Text>,
         }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{
+        options={({ navigation }) => ({
           title: "Profil",
           headerTitle: () => <HeaderTitleDark title="Profil" />,
-          headerStyle: styles.headerStyleDark,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>👤</Text>,
-        }}
+          ...drawerScreenOptions(navigation, { darkHeader: true }),
+        })}
       />
-    </Tab.Navigator>
+    </Drawer.Navigator>
   );
 }
 
@@ -286,6 +297,7 @@ export default function AppNavigator() {
     () => ({
       token,
       user,
+      isRestoring: isBootstrapping,
       signIn: async ({ token: newToken, user: newUser }) => {
         await AsyncStorage.setItem(TOKEN_KEY, newToken);
         await AsyncStorage.setItem(USER_KEY, JSON.stringify(newUser));
@@ -298,28 +310,32 @@ export default function AppNavigator() {
         setUser(null);
       },
     }),
-    [token, user]
+    [token, user, isBootstrapping]
   );
 
   const role = String(user?.role || "").trim().toLowerCase();
   const isAuthenticated = Boolean(token);
+  const showMainApp = !isBootstrapping && isAuthenticated;
 
   return (
     <AuthContext.Provider value={authContextValue}>
       <NavigationContainer>
-        <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          {isBootstrapping ? (
-            <RootStack.Screen name="Splash" component={SplashScreen} />
-          ) : !isAuthenticated ? (
-            <RootStack.Screen name="Auth" component={AuthNavigator} />
-          ) : role === "admin" ? (
-            <RootStack.Screen name="AdminApp" component={AdminNoticeScreen} />
-          ) : role === "client" ? (
-            <RootStack.Screen name="ClientApp" component={ClientTabs} />
-          ) : role === "transporteur" ? (
-            <RootStack.Screen name="TransporteurApp" component={TransporteurTabs} />
+        <RootStack.Navigator
+          key={showMainApp ? `app-${role || "user"}` : "auth"}
+          screenOptions={{ headerShown: false }}
+        >
+          {showMainApp ? (
+            role === "admin" ? (
+              <RootStack.Screen name="AdminApp" component={AdminNoticeScreen} />
+            ) : role === "client" ? (
+              <RootStack.Screen name="ClientApp" component={ClientAppDrawer} />
+            ) : role === "transporteur" ? (
+              <RootStack.Screen name="TransporteurApp" component={TransporteurAppDrawer} />
+            ) : (
+              <RootStack.Screen name="UserApp" component={ClientAppDrawer} />
+            )
           ) : (
-            <RootStack.Screen name="UserApp" component={ClientTabs} />
+            <RootStack.Screen name="Auth" component={AuthRootWithBootstrapOverlay} />
           )}
         </RootStack.Navigator>
       </NavigationContainer>
@@ -328,6 +344,15 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  authRoot: {
+    flex: 1,
+  },
+  bootstrapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.55)",
+  },
   headerStyle: {
     backgroundColor: theme.colors.white,
     ...theme.shadows.header,
@@ -370,18 +395,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 18,
   },
-  tabBar: {
-    height: 72,
-    paddingBottom: 10,
-    paddingTop: 6,
+  drawerPanel: {
+    width: "82%",
+    maxWidth: 320,
     backgroundColor: theme.colors.white,
-    borderTopWidth: 0,
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  tabIcon: {
-    fontSize: 18,
+    borderTopRightRadius: theme.radius.xxl,
+    borderBottomRightRadius: theme.radius.xxl,
+    overflow: "hidden",
   },
 });

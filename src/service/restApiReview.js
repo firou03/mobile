@@ -1,6 +1,5 @@
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_CANDIDATES } from "./apiConfig";
+import { axiosWithBaseFallback } from "./apiClient";
 
 const REVIEW_PATH = "/api/reviews";
 
@@ -11,23 +10,13 @@ async function getHeaders() {
 
 async function reviewRequest(method, endpoint, { data, params, headers: extraH } = {}) {
   const baseHeaders = await getHeaders();
-  let lastError;
-
-  for (const baseURL of API_BASE_CANDIDATES) {
-    try {
-      return await axios({
-        method,
-        url: `${baseURL}${REVIEW_PATH}${endpoint}`,
-        data,
-        params,
-        headers: { ...baseHeaders, "Content-Type": "application/json", ...extraH },
-        timeout: 15000,
-      });
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError;
+  return axiosWithBaseFallback((baseURL) => ({
+    method,
+    url: `${baseURL}${REVIEW_PATH}${endpoint}`,
+    data,
+    params,
+    headers: { ...baseHeaders, "Content-Type": "application/json", ...extraH },
+  }));
 }
 
 async function ratedByPayload() {

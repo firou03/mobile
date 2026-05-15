@@ -1,6 +1,5 @@
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_CANDIDATES } from "./apiConfig";
+import { axiosWithBaseFallback } from "./apiClient";
 
 const NOTIFICATIONS_SUFFIX = "/api/notifications";
 
@@ -11,17 +10,12 @@ const getHeaders = async () => {
 
 async function notificationRequest(method, endpoint = "", data = undefined) {
   const headers = await getHeaders();
-  let lastError;
-
-  for (const baseURL of API_BASE_CANDIDATES) {
-    const url = `${baseURL}${NOTIFICATIONS_SUFFIX}${endpoint}`;
-    try {
-      return await axios({ method, url, data, headers, timeout: 15000 });
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError;
+  return axiosWithBaseFallback((baseURL) => ({
+    method,
+    url: `${baseURL}${NOTIFICATIONS_SUFFIX}${endpoint}`,
+    data,
+    headers,
+  }));
 }
 
 export const getNotifications = () => notificationRequest("get", "");

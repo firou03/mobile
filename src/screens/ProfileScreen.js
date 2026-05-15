@@ -2,7 +2,6 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from "re
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,10 +15,12 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import AppButton from "../components/AppButton";
+import ProfileAvatar from "../components/ProfileAvatar";
 import { AuthContext } from "../context/AuthContext";
-import { API_BASE_CANDIDATES } from "../service/apiConfig";
 import { getUserReviews } from "../service/restApiReview";
 import { updateUser, uploadProfilePicture } from "../service/restApiUser";
 import theme, { getProfileAccent } from "../utils/theme";
@@ -72,10 +73,27 @@ export default function ProfileScreen({ navigation }) {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const imageBase = API_BASE_CANDIDATES[0];
-  const profileImageUri =
-    previewUri ||
-    (user?.user_image ? `${imageBase}/images/${user.user_image}` : null);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        if (!token) return;
+        try {
+          const raw = await AsyncStorage.getItem("user");
+          if (!raw || !active) return;
+          const stored = JSON.parse(raw);
+          if (stored?._id && stored._id === user?._id) {
+            await signIn({ token, user: stored });
+          }
+        } catch {
+          /* ignore */
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [token, user?._id, signIn])
+  );
 
   useEffect(() => {
     setFormData({
@@ -233,11 +251,12 @@ export default function ProfileScreen({ navigation }) {
                 end={{ x: 1, y: 1 }}
               >
                 <View style={styles.avatarInner}>
-                  {profileImageUri ? (
-                    <Image source={{ uri: profileImageUri }} style={styles.avatarImg} />
-                  ) : (
-                    <Text style={styles.avatarLetter}>{fullName.charAt(0).toUpperCase()}</Text>
-                  )}
+                  <ProfileAvatar
+                    user={user}
+                    name={fullName}
+                    size={82}
+                    localUri={previewUri}
+                  />
                 </View>
               </LinearGradient>
               <View style={styles.heroMeta}>

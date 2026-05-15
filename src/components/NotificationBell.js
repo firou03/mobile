@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   getUnreadCount,
   getNotifications,
@@ -15,29 +16,42 @@ import {
   markAllNotificationsRead,
   deleteNotification,
 } from "../service/restApiNotification";
+import { isNetworkFailure } from "../service/apiClient";
+import { AuthContext } from "../context/AuthContext";
 import theme from "../utils/theme";
 
 export default function NotificationBell({ onNotificationPress }) {
+  const { token } = useContext(AuthContext);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Fetch unread count every 30 seconds
   useEffect(() => {
+    if (!token) {
+      setUnreadCount(0);
+      return undefined;
+    }
+
     const fetchUnreadCount = async () => {
+      const stored = await AsyncStorage.getItem("token");
+      if (!stored) return;
       try {
         const response = await getUnreadCount();
         setUnreadCount(response.data?.count || 0);
       } catch (error) {
-        console.error("Error fetching unread count:", error.message);
+        if (__DEV__ && isNetworkFailure(error)) {
+          console.warn(
+            "Notifications: serveur injoignable. Demarrez le backend (port 5000) et verifiez EXPO_PUBLIC_API_URL."
+          );
+        }
       }
     };
 
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [token]);
 
   const handleBellPress = async () => {
     setModalVisible(true);

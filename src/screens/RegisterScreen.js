@@ -3,12 +3,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   ToastAndroid,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import * as ImagePicker from "expo-image-picker";
 import { registerUser } from "../service/restApiUser";
 import AppButton from "../components/AppButton";
@@ -88,71 +90,89 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <LinearGradient colors={theme.gradients.auth} style={styles.topGradient}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>Inscription</Text>
-        </View>
-        <Text style={styles.brandIcon}>📝</Text>
-        <Text style={styles.brandTitle}>Creation de compte</Text>
+      <LinearGradient
+        colors={theme.gradients.auth}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.topGradient}
+      >
+        <Animated.View entering={FadeInDown.duration(theme.motion.enterDuration).springify()} style={styles.topInner}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Inscription</Text>
+          </View>
+          <Text style={styles.brandIcon}>📝</Text>
+          <Text style={styles.brandTitle}>Creation de compte</Text>
+        </Animated.View>
       </LinearGradient>
 
-      <View style={styles.formCard}>
-        <AppInput label="Nom" placeholder="Votre nom" value={name} onChangeText={setName} error={errors.name} />
-        <AppInput
-          label="Email"
-          icon="📧"
-          placeholder="votre@email.com"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          error={errors.email}
-        />
-        <AppInput
-          label="Mot de passe"
-          icon="🔒"
-          placeholder="Mot de passe"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          error={errors.password}
-        />
+      <Animated.View entering={FadeInUp.delay(80).duration(theme.motion.enterDuration).springify()} style={styles.formCard}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.formScroll}
+          nestedScrollEnabled
+        >
+          <AppInput label="Nom" placeholder="Votre nom" value={name} onChangeText={setName} error={errors.name} />
+          <AppInput
+            label="Email"
+            icon="📧"
+            placeholder="votre@email.com"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            error={errors.email}
+          />
+          <AppInput
+            label="Mot de passe"
+            icon="🔒"
+            placeholder="Mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            error={errors.password}
+          />
 
-        <Text style={styles.roleLabel}>Choisir un role</Text>
-        <Text style={styles.roleHint}>Le role determine vos pages apres connexion.</Text>
-        <View style={styles.rolesRow}>
-          {["client", "transporteur"].map((item) => {
-            const selected = role === item;
-            return (
-              <Pressable
-                key={item}
-                onPress={() => {
-                  setRole(item);
-                  if (item === "client") setPermisUri(null);
-                }}
-                style={[styles.roleCard, selected ? styles.roleSelected : null]}
-              >
-                <Text style={[styles.roleText, selected ? styles.roleTextSelected : null]}>
-                  {item === "client" ? "Client" : "Transporteur"}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+          <Text style={styles.roleLabel}>Choisir un role</Text>
+          <Text style={styles.roleHint}>Le role determine vos pages apres connexion.</Text>
+          <View style={styles.rolesRow}>
+            {["client", "transporteur"].map((item) => {
+              const selected = role === item;
+              return (
+                <Pressable
+                  key={item}
+                  onPress={() => {
+                    setRole(item);
+                    if (item === "client") setPermisUri(null);
+                  }}
+                  style={[styles.roleCard, selected ? styles.roleSelected : null]}
+                >
+                  <Text style={[styles.roleText, selected ? styles.roleTextSelected : null]}>
+                    {item === "client" ? "Client" : "Transporteur"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
-        {role === "transporteur" ? (
-          <>
-            <Text style={styles.permisHint}>Ajoutez une photo du permis (obligatoire, comme sur le site web).</Text>
-            <AppButton title={permisUri ? "✓ Photo permis choisie" : "Choisir une photo du permis"} variant="outline" onPress={pickPermis} />
-            {errors.permis ? <Text style={styles.permisErr}>{errors.permis}</Text> : null}
-          </>
-        ) : null}
+          {role === "transporteur" ? (
+            <>
+              <Text style={styles.permisHint}>Ajoutez une photo du permis (obligatoire, comme sur le site web).</Text>
+              <AppButton
+                title={permisUri ? "✓ Photo permis choisie" : "Choisir une photo du permis"}
+                variant="outline"
+                onPress={pickPermis}
+              />
+              {errors.permis ? <Text style={styles.permisErr}>{errors.permis}</Text> : null}
+            </>
+          ) : null}
 
-        <AppButton title="S'inscrire" onPress={handleRegister} loading={loading} style={styles.button} />
-        <Text style={styles.link} onPress={() => navigation.goBack()}>
-          Deja un compte ? Se connecter
-        </Text>
-      </View>
+          <AppButton title="S'inscrire" onPress={handleRegister} loading={loading} style={styles.button} />
+          <Text style={styles.link} onPress={() => navigation.goBack()}>
+            Deja un compte ? Se connecter
+          </Text>
+        </ScrollView>
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 }
@@ -163,9 +183,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   topGradient: {
-    height: "34%",
-    alignItems: "center",
+    flex: 2,
+    minHeight: 140,
+    maxHeight: 280,
     justifyContent: "center",
+  },
+  topInner: {
+    alignItems: "center",
     gap: 8,
   },
   badge: {
@@ -191,12 +215,20 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   formCard: {
-    flex: 1,
+    flex: 3,
+    minHeight: 0,
     backgroundColor: theme.colors.white,
     marginTop: -theme.spacing.xxxl,
     borderTopLeftRadius: theme.radius.xxxl,
     borderTopRightRadius: theme.radius.xxxl,
+    ...theme.shadows.formCard,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.9)",
+  },
+  formScroll: {
+    flexGrow: 1,
     padding: theme.spacing.xl,
+    paddingBottom: theme.spacing.section,
   },
   roleLabel: {
     color: theme.colors.textPrimary,

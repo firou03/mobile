@@ -1,14 +1,21 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Platform, RefreshControl, ScrollView, StyleSheet, Text, ToastAndroid, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import AppButton from "../components/AppButton";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ActionTile from "../components/dashboard/ActionTile";
+import DashboardAvatar from "../components/dashboard/DashboardAvatar";
+import StatCard from "../components/dashboard/StatCard";
 import NotificationBell from "../components/NotificationBell";
 import { AuthContext } from "../context/AuthContext";
 import { getClientRequests, getMesRequests, getPendingRequests } from "../service/restApiTransport";
 import theme from "../utils/theme";
 
+const { colors, typography } = theme;
+
 export default function HomeScreen({ navigation }) {
-  const { user, signOut } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const insets = useSafeAreaInsets();
   const role = String(user?.role || "").trim().toLowerCase();
   const isClient = role === "client";
   const [stats, setStats] = useState({ a: 0, b: 0, c: 0 });
@@ -50,45 +57,188 @@ export default function HomeScreen({ navigation }) {
     loadDashboardData();
   }, [isClient]);
 
-  const firstAction = useMemo(
+  const statItems = useMemo(
     () =>
       isClient
-        ? { title: "Creer une demande", route: "Client" }
-        : { title: "Mes trajets", route: "MesRequests" },
-    [isClient]
+        ? [
+            {
+              value: stats.a,
+              label: "Total",
+              icon: "document-text-outline",
+              color: colors.semanticRequest,
+              bgColor: colors.semanticRequestBg,
+            },
+            {
+              value: stats.b,
+              label: "Acceptees",
+              icon: "checkmark-circle-outline",
+              color: colors.semanticDelivery,
+              bgColor: colors.semanticDeliveryBg,
+            },
+            {
+              value: stats.c,
+              label: "En attente",
+              icon: "time-outline",
+              color: colors.semanticRequest,
+              bgColor: colors.semanticRequestBg,
+            },
+          ]
+        : [
+            {
+              value: stats.a,
+              label: "Disponibles",
+              icon: "cube-outline",
+              color: colors.semanticRequest,
+              bgColor: colors.semanticRequestBg,
+            },
+            {
+              value: stats.b,
+              label: "Mes trajets",
+              icon: "car-outline",
+              color: colors.semanticRequest,
+              bgColor: colors.semanticRequestBg,
+            },
+            {
+              value: stats.c,
+              label: "Livrees",
+              icon: "checkmark-done-outline",
+              color: colors.semanticDelivery,
+              bgColor: colors.semanticDeliveryBg,
+            },
+          ],
+    [isClient, stats]
   );
+
+  const actionItems = useMemo(() => {
+    const pendingLabel = (n) => `${n} ${n === 1 ? "nouvelle demande" : "nouvelles demandes"}`;
+    const totalLabel = (n) => `${n} demande${n !== 1 ? "s" : ""} au total`;
+
+    if (isClient) {
+      return [
+        {
+          title: "Creer une demande",
+          subtitle: stats.c > 0 ? `${stats.c} en attente de traitement` : "Nouvelle livraison",
+          icon: "add-circle-outline",
+          color: colors.semanticRequest,
+          bgColor: colors.semanticRequestBg,
+          route: "Client",
+        },
+        {
+          title: "Mes demandes",
+          subtitle: totalLabel(stats.a),
+          icon: "list-outline",
+          color: colors.semanticRequest,
+          bgColor: colors.semanticRequestBg,
+          route: "ClientRequests",
+        },
+        {
+          title: "Suivi colis",
+          subtitle: "Suivre un envoi en temps reel",
+          icon: "locate-outline",
+          color: colors.semanticTracking,
+          bgColor: colors.semanticTrackingBg,
+          route: "Tracking",
+        },
+        {
+          title: "Messagerie",
+          subtitle: "Discuter avec les transporteurs",
+          icon: "chatbubbles-outline",
+          color: colors.semanticNeutral,
+          bgColor: colors.semanticNeutralBg,
+          route: "Chat",
+        },
+        {
+          title: "Mon profil",
+          subtitle: "Compte et parametres",
+          icon: "person-outline",
+          color: colors.semanticNeutral,
+          bgColor: colors.semanticNeutralBg,
+          route: "Profile",
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "Mes trajets",
+        subtitle: stats.b > 0 ? `${stats.b} trajet${stats.b !== 1 ? "s" : ""} actif${stats.b !== 1 ? "s" : ""}` : "Aucun trajet en cours",
+        icon: "car-outline",
+        color: colors.semanticRequest,
+        bgColor: colors.semanticRequestBg,
+        route: "MesRequests",
+      },
+      {
+        title: "Demandes disponibles",
+        subtitle: stats.a > 0 ? pendingLabel(stats.a) : "Aucune demande pour le moment",
+        icon: "cube-outline",
+        color: colors.semanticRequest,
+        bgColor: colors.semanticRequestBg,
+        route: "Requests",
+      },
+      {
+        title: "Suivi colis",
+        subtitle: "Localiser un colis",
+        icon: "locate-outline",
+        color: colors.semanticTracking,
+        bgColor: colors.semanticTrackingBg,
+        route: "Tracking",
+      },
+      {
+        title: "Messagerie",
+        subtitle: "Contacter vos clients",
+        icon: "chatbubbles-outline",
+        color: colors.semanticNeutral,
+        bgColor: colors.semanticNeutralBg,
+        route: "Chat",
+      },
+      {
+        title: "Mon profil",
+        subtitle: "Compte et parametres",
+        icon: "person-outline",
+        color: colors.semanticNeutral,
+        bgColor: colors.semanticNeutralBg,
+        route: "Profile",
+      },
+    ];
+  }, [isClient, stats]);
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={theme.gradients.auth} style={styles.hero}>
-        <View style={styles.topRow}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Bienvenue {user?.name || ""}</Text>
-            <Text style={styles.subtitle}>
-              {isClient
-                ? "Creez une demande ou suivez vos actions rapidement."
-                : "Consultez vos trajets et les demandes disponibles."}
-            </Text>
-          </View>
-          <View style={styles.topRowButtons}>
-            <NotificationBell onNotificationPress={() => navigation.navigate("Notifications")} />
-            <AppButton title="Logout" variant="danger" onPress={signOut} style={styles.logoutBtn} />
-          </View>
-        </View>
+      <LinearGradient
+        colors={theme.gradients.hero}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.hero, { paddingTop: 16 + insets.top }]}
+      >
+        <View style={styles.decorCircleLarge} pointerEvents="none" />
+        <View style={styles.decorCircleSmall} pointerEvents="none" />
 
-        <View style={styles.identityRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(user?.name?.[0] || "U").toUpperCase()}</Text>
+        <Animated.View entering={FadeInDown.duration(theme.motion.enterDuration).springify()} style={styles.heroInner}>
+          <View style={styles.topRow}>
+            <View style={styles.header}>
+              <Text style={styles.heroGreeting}>Bienvenue</Text>
+              <Text style={styles.heroName}>{user?.name || "Utilisateur"}</Text>
+              <Text style={styles.heroSubtitle}>
+                {isClient
+                  ? "Creez une demande ou suivez vos livraisons."
+                  : "Consultez vos trajets et les demandes disponibles."}
+              </Text>
+            </View>
+            <NotificationBell onNotificationPress={() => navigation.navigate("Notifications")} />
           </View>
-          <View>
-            <Text style={styles.identityName}>{user?.name || "Utilisateur"}</Text>
-            <Text style={styles.identityRole}>{isClient ? "Client" : "Transporteur"}</Text>
+
+          <View style={styles.identityRow}>
+            <DashboardAvatar user={user} size={44} />
+            <View style={styles.identityText}>
+              <Text style={styles.identityName}>{user?.name || "Utilisateur"}</Text>
+              <Text style={styles.identityRole}>{isClient ? "Client" : "Transporteur"}</Text>
+            </View>
           </View>
-        </View>
+        </Animated.View>
       </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 28 + insets.bottom }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -96,47 +246,41 @@ export default function HomeScreen({ navigation }) {
               setRefreshing(true);
               loadDashboardData();
             }}
-            colors={[theme.colors.primary]}
+            colors={[colors.primary]}
           />
         }
       >
-        <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
-            <Text style={styles.kpiValue}>{stats.a}</Text>
-            <Text style={styles.kpiLabel}>{isClient ? "Demandes totales" : "Demandes disponibles"}</Text>
+        <Animated.View
+          entering={FadeInUp.delay(theme.motion.stagger).duration(theme.motion.enterDuration).springify()}
+        >
+          <Text style={styles.sectionLabel}>Apercu</Text>
+          <View style={styles.statsRow}>
+            {statItems.map((item) => (
+              <StatCard key={item.label} {...item} />
+            ))}
           </View>
-          <View style={styles.kpiCard}>
-            <Text style={styles.kpiValue}>{stats.b}</Text>
-            <Text style={styles.kpiLabel}>{isClient ? "Acceptees" : "Mes trajets"}</Text>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInUp.delay(theme.motion.stagger * 2).duration(theme.motion.enterDuration).springify()}
+          style={styles.actionsCard}
+        >
+          <Text style={styles.sectionLabel}>Actions rapides</Text>
+          <View style={styles.actionsList}>
+            {actionItems.map((item, index) => (
+              <ActionTile
+                key={item.route}
+                title={item.title}
+                subtitle={item.subtitle}
+                icon={item.icon}
+                color={item.color}
+                bgColor={item.bgColor}
+                onPress={() => navigation.navigate(item.route)}
+                isLast={index === actionItems.length - 1}
+              />
+            ))}
           </View>
-        </View>
-
-        <View style={styles.kpiCardLarge}>
-          <Text style={styles.kpiValueDark}>{stats.c}</Text>
-          <Text style={styles.kpiLabelDark}>{isClient ? "En attente" : "Livrees"}</Text>
-        </View>
-
-        <View style={styles.actionsCard}>
-          <Text style={styles.actionsTitle}>Actions rapides</Text>
-          <AppButton title={firstAction.title} onPress={() => navigation.navigate(firstAction.route)} />
-          {isClient && (
-            <AppButton
-              title="Mes demandes"
-              variant="outline"
-              onPress={() => navigation.navigate("ClientRequests")}
-            />
-          )}
-          {!isClient && (
-            <AppButton
-              title="Demandes disponibles"
-              variant="outline"
-              onPress={() => navigation.navigate("Requests")}
-            />
-          )}
-          <AppButton title="Suivi colis" variant="secondary" onPress={() => navigation.navigate("Tracking")} />
-          <AppButton title="Messagerie" variant="outline" onPress={() => navigation.navigate("Chat")} />
-          <AppButton title="Mon profil" variant="secondary" onPress={() => navigation.navigate("Profile")} />
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -149,8 +293,30 @@ const styles = StyleSheet.create({
   },
   hero: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 18,
+    paddingBottom: 20,
+    overflow: "hidden",
+  },
+  decorCircleLarge: {
+    position: "absolute",
+    right: -48,
+    top: -32,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: theme.colors.overlayWhite20,
+  },
+  decorCircleSmall: {
+    position: "absolute",
+    left: -24,
+    bottom: -16,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: theme.colors.overlayWhite22,
+  },
+  heroInner: {
+    gap: 14,
+    zIndex: 1,
   },
   topRow: {
     flexDirection: "row",
@@ -158,111 +324,66 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
   },
-  topRowButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   header: {
     flex: 1,
-    gap: 6,
+    gap: 4,
   },
-  title: {
-    fontSize: 26,
+  heroGreeting: {
+    fontSize: 13,
+    color: theme.colors.white,
+    opacity: 0.85,
+    fontWeight: "500",
+  },
+  heroName: {
+    fontSize: 24,
     fontWeight: "800",
     color: theme.colors.white,
   },
-  subtitle: {
-    fontSize: 14,
+  heroSubtitle: {
+    fontSize: 13,
     color: theme.colors.white,
-    opacity: 0.95,
-  },
-  logoutBtn: {
-    height: 42,
-    minWidth: 96,
+    opacity: 0.88,
+    marginTop: 2,
   },
   identityRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginTop: 14,
   },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: theme.radius.round,
-    backgroundColor: theme.colors.overlayWhite24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    color: theme.colors.white,
-    fontWeight: "800",
-    fontSize: 18,
+  identityText: {
+    gap: 2,
   },
   identityName: {
     color: theme.colors.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
   },
   identityRole: {
     color: theme.colors.white,
-    opacity: 0.9,
+    opacity: 0.88,
+    fontSize: 12,
   },
   content: {
     padding: 16,
-    paddingBottom: 24,
-    gap: 12,
+    gap: 16,
   },
-  kpiRow: {
+  sectionLabel: {
+    ...typography.sectionLabel,
+    marginBottom: 10,
+  },
+  statsRow: {
     flexDirection: "row",
-    gap: 10,
-  },
-  kpiCard: {
-    flex: 1,
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.md,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.md,
-    ...theme.shadows.cardSoft,
-  },
-  kpiCardLarge: {
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.md,
-    paddingVertical: 14,
-    paddingHorizontal: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  kpiValue: {
-    color: theme.colors.textPrimary,
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  kpiLabel: {
-    color: theme.colors.textSecondary,
-    marginTop: 4,
-    fontWeight: "600",
-  },
-  kpiValueDark: {
-    color: theme.colors.primary,
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  kpiLabelDark: {
-    color: theme.colors.textSecondary,
-    marginTop: 4,
-    fontWeight: "600",
+    gap: 8,
   },
   actionsCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.radius.lg,
-    padding: 14,
-    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 6,
+    ...theme.shadows.card,
   },
-  actionsTitle: {
-    color: theme.colors.textPrimary,
-    fontWeight: "700",
-    marginBottom: 2,
+  actionsList: {
+    marginTop: 2,
   },
 });
