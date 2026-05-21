@@ -9,6 +9,12 @@ import StatCard from "../components/dashboard/StatCard";
 import NotificationBell from "../components/NotificationBell";
 import { AuthContext } from "../context/AuthContext";
 import { getClientRequests, getMesRequests, getPendingRequests } from "../service/restApiTransport";
+import {
+  countClientAccepted,
+  countDelivered,
+  countPending,
+  extractTransportRequestsList,
+} from "../utils/requestStatus";
 import theme from "../utils/theme";
 
 const { colors, typography } = theme;
@@ -30,21 +36,21 @@ export default function HomeScreen({ navigation }) {
     try {
       if (isClient) {
         const res = await getClientRequests();
-        const requests = Array.isArray(res?.data) ? res.data : [];
+        const requests = extractTransportRequestsList(res);
         setStats({
           a: requests.length,
-          b: requests.filter((item) => item?.status === "accepted").length,
-          c: requests.filter((item) => !item?.status || item?.status === "pending").length,
+          b: countClientAccepted(requests),
+          c: countPending(requests),
         });
         return;
       }
       const [pendingRes, mesRes] = await Promise.all([getPendingRequests(), getMesRequests()]);
-      const pending = Array.isArray(pendingRes?.data) ? pendingRes.data : [];
-      const mes = Array.isArray(mesRes?.data) ? mesRes.data : [];
+      const pending = extractTransportRequestsList(pendingRes);
+      const mes = extractTransportRequestsList(mesRes);
       setStats({
         a: pending.length,
         b: mes.length,
-        c: mes.filter((item) => item?.status === "delivered").length,
+        c: countDelivered(mes),
       });
     } catch {
       showToast("Impossible de charger le tableau de bord");
@@ -55,7 +61,9 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadDashboardData();
-  }, [isClient]);
+    const unsubscribe = navigation?.addListener?.("focus", loadDashboardData);
+    return unsubscribe;
+  }, [isClient, navigation]);
 
   const statItems = useMemo(
     () =>

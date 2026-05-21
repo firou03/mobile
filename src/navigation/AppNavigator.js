@@ -16,7 +16,11 @@ import MesRequestsScreen from "../screens/MesRequestsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import ChatScreen from "../screens/ChatScreen";
 import TrackingScreen from "../screens/TrackingScreen";
-import AdminNoticeScreen from "../screens/AdminNoticeScreen";
+import AdminHomeScreen from "../screens/admin/AdminHomeScreen";
+import AdminUsersScreen from "../screens/admin/AdminUsersScreen";
+import AdminRequestsScreen from "../screens/admin/AdminRequestsScreen";
+import AdminReviewsScreen from "../screens/admin/AdminReviewsScreen";
+import AdminDrawerContent from "../components/AdminDrawerContent";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import { AuthContext } from "../context/AuthContext";
 import AppDrawerContent from "../components/AppDrawerContent";
@@ -189,6 +193,73 @@ function ClientAppDrawer() {
   );
 }
 
+function AdminAppDrawer() {
+  return (
+    <Drawer.Navigator
+      initialRouteName="AdminHome"
+      drawerContent={(props) => <AdminDrawerContent {...props} />}
+      screenOptions={({ navigation }) => ({
+        ...drawerScreenOptions(navigation),
+        drawerType: "front",
+        drawerStyle: styles.drawerPanel,
+        overlayColor: "rgba(15, 23, 42, 0.45)",
+        swipeEnabled: true,
+        swipeEdgeWidth: 48,
+      })}
+    >
+      <Drawer.Screen
+        name="AdminHome"
+        component={AdminHomeScreen}
+        options={{
+          title: "Tableau de bord",
+          headerTitle: () => <HeaderTitle title="Administration" />,
+        }}
+      />
+      <Drawer.Screen
+        name="AdminUsers"
+        component={AdminUsersScreen}
+        options={{
+          title: "Utilisateurs",
+          headerTitle: () => <HeaderTitle title="Utilisateurs" />,
+        }}
+      />
+      <Drawer.Screen
+        name="AdminRequests"
+        component={AdminRequestsScreen}
+        options={{
+          title: "Expeditions",
+          headerTitle: () => <HeaderTitle title="Expeditions" />,
+        }}
+      />
+      <Drawer.Screen
+        name="AdminReviews"
+        component={AdminReviewsScreen}
+        options={{
+          title: "Avis",
+          headerTitle: () => <HeaderTitle title="Avis clients" />,
+        }}
+      />
+      <Drawer.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          title: "Notifications",
+          headerTitle: () => <HeaderTitle title="Notifications" />,
+        }}
+      />
+      <Drawer.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={({ navigation }) => ({
+          title: "Profil",
+          headerTitle: () => <HeaderTitleDark title="Profil" />,
+          ...drawerScreenOptions(navigation, { darkHeader: true }),
+        })}
+      />
+    </Drawer.Navigator>
+  );
+}
+
 function TransporteurAppDrawer() {
   return (
     <Drawer.Navigator
@@ -326,7 +397,7 @@ export default function AppNavigator() {
         >
           {showMainApp ? (
             role === "admin" ? (
-              <RootStack.Screen name="AdminApp" component={AdminNoticeScreen} />
+              <RootStack.Screen name="AdminApp" component={AdminAppDrawer} />
             ) : role === "client" ? (
               <RootStack.Screen name="ClientApp" component={ClientAppDrawer} />
             ) : role === "transporteur" ? (

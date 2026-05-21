@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import AppButton from "./AppButton";
 import StatusBadge from "./StatusBadge";
+import { canDeliverRequest, needsClientConfirmation } from "../utils/requestStatus";
 import theme from "../utils/theme";
 
 export default function RequestCard({
@@ -12,17 +13,22 @@ export default function RequestCard({
   showDeliver = false,
   onDeliver,
   delivering = false,
+  showConfirmActions = false,
+  onConfirm,
+  onRefuse,
+  confirming = false,
 }) {
-  const canDeliver =
-    showDeliver &&
-    String(item?.status || "").toLowerCase() === "accepted" &&
-    typeof onDeliver === "function";
+  const status = item?.status ?? item?.statut;
+  const canDeliver = showDeliver && canDeliverRequest(status) && typeof onDeliver === "function";
+  const showClientActions = showConfirmActions && needsClientConfirmation(status);
 
   return (
     <Pressable style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}>
       <View style={styles.topRow}>
-        <Text style={styles.route}>🚚 {item?.pickupLocation} → {item?.deliveryLocation}</Text>
-        <StatusBadge status={acceptedMode ? "accepted" : item?.status} />
+        <Text style={styles.route}>
+          🚚 {item?.pickupLocation} → {item?.deliveryLocation}
+        </Text>
+        <StatusBadge status={status} />
       </View>
       <View style={styles.metaRow}>
         <Text style={styles.meta}>⚖️ {item?.weight} kg</Text>
@@ -30,9 +36,35 @@ export default function RequestCard({
         {item?.isSensitive === "oui" ? <Text style={styles.sensitive}>⚠️ Sensible</Text> : null}
       </View>
       {acceptedMode && item?.client ? (
-        <Text style={styles.clientInfo}>Client: {item.client.name} ({item.client.email})</Text>
+        <Text style={styles.clientInfo}>
+          Client: {item.client.name} ({item.client.email})
+        </Text>
       ) : null}
-      {showAccept ? <AppButton title="Accepter" variant="secondary" onPress={() => onAccept?.(item?._id)} /> : null}
+      {acceptedMode && item?.transporteur ? (
+        <Text style={styles.clientInfo}>
+          Transporteur: {item.transporteur.name}
+        </Text>
+      ) : null}
+      {showAccept ? (
+        <AppButton title="Accepter" variant="secondary" onPress={() => onAccept?.(item?._id)} />
+      ) : null}
+      {showClientActions ? (
+        <View style={styles.actionRow}>
+          <AppButton
+            title={confirming ? "..." : "Confirmer"}
+            onPress={() => onConfirm?.(item?._id)}
+            loading={confirming}
+            style={styles.actionBtn}
+          />
+          <AppButton
+            title="Refuser"
+            variant="secondary"
+            onPress={() => onRefuse?.(item?._id)}
+            disabled={confirming}
+            style={styles.actionBtn}
+          />
+        </View>
+      ) : null}
       {canDeliver ? (
         <AppButton
           title={delivering ? "Confirmation..." : "Marquer comme livré"}
@@ -73,6 +105,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginBottom: 10,
+    flexWrap: "wrap",
   },
   meta: {
     backgroundColor: theme.colors.primaryLight,
@@ -94,6 +127,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: theme.colors.textSecondary,
     fontSize: 13,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  actionBtn: {
+    flex: 1,
   },
   deliverBtn: {
     marginTop: 10,

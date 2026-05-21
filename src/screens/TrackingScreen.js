@@ -12,6 +12,7 @@ import {
 import AppButton from "../components/AppButton";
 import { AuthContext } from "../context/AuthContext";
 import { getClientRequestsForDashboard, getMesRequests, updateRequestLocation } from "../service/restApiTransport";
+import { isTrackableRequest } from "../utils/requestStatus";
 import theme from "../utils/theme";
 
 function toast(msg) {
@@ -38,7 +39,7 @@ export default function TrackingScreen() {
       if (isTransporteur) {
         const res = await getMesRequests();
         const list = Array.isArray(res.data) ? res.data : [];
-        setRequests(list.filter((r) => ["accepted_by_transporter", "confirmed", "delivered"].includes(String(r.status || "").toLowerCase())));
+        setRequests(list.filter((r) => isTrackableRequest(r.status)));
       } else {
         const res = await getClientRequestsForDashboard();
         const list = Array.isArray(res.data) ? res.data : [];
@@ -46,7 +47,7 @@ export default function TrackingScreen() {
         setRequests(
           list.filter(
             (r) =>
-              ["accepted_by_transporter", "confirmed", "delivered"].includes(String(r.status || "").toLowerCase()) &&
+              isTrackableRequest(r.status) &&
               (sameId(r.client?._id, uid) || sameId(r.client, uid))
           )
         );
