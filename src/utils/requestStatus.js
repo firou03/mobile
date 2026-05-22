@@ -93,8 +93,13 @@ export function isPendingRequest(status) {
   return normalizeRequestStatus(status) === "pending";
 }
 
-export function needsClientConfirmation(status) {
-  return normalizeRequestStatus(status) === "accepted_by_transporter";
+export function needsClientConfirmation(statusOrItem) {
+  const status =
+    typeof statusOrItem === "object" && statusOrItem !== null
+      ? getRequestStatusFromItem(statusOrItem)
+      : statusOrItem;
+  const key = normalizeRequestStatus(status);
+  return key === "accepted_by_transporter" || key === "accepted";
 }
 
 export function isTrackableRequest(status) {
@@ -135,5 +140,34 @@ export function countPending(requests = []) {
 export function countDelivered(requests = []) {
   return requests.filter(
     (item) => normalizeRequestStatus(getRequestStatusFromItem(item)) === "delivered"
+  ).length;
+}
+
+/** Statuts réservés à l'écran Historique */
+export const HISTORY_STATUSES = ["delivered", "cancelled", "expired"];
+
+export function isHistoryRequest(item) {
+  return HISTORY_STATUSES.includes(normalizeRequestStatus(getRequestStatusFromItem(item)));
+}
+
+export function isActiveRequest(item) {
+  return !isHistoryRequest(item);
+}
+
+export function filterActiveRequests(requests = []) {
+  return (requests || []).filter(isActiveRequest);
+}
+
+export function filterHistoryRequests(requests = []) {
+  return (requests || []).filter(isHistoryRequest);
+}
+
+export function countHistory(requests = []) {
+  return filterHistoryRequests(requests).length;
+}
+
+export function countCancelled(requests = []) {
+  return requests.filter(
+    (item) => normalizeRequestStatus(getRequestStatusFromItem(item)) === "cancelled"
   ).length;
 }

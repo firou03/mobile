@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import AppButton from "./AppButton";
 import StatusBadge from "./StatusBadge";
+import UserRatingSummary from "./UserRatingSummary";
 import { canDeliverRequest, needsClientConfirmation } from "../utils/requestStatus";
 import theme from "../utils/theme";
 
@@ -14,8 +15,7 @@ export default function RequestCard({
   onDeliver,
   delivering = false,
   showConfirmActions = false,
-  onConfirm,
-  onRefuse,
+  onConfirmPress,
   confirming = false,
 }) {
   const status = item?.status ?? item?.statut;
@@ -36,34 +36,29 @@ export default function RequestCard({
         {item?.isSensitive === "oui" ? <Text style={styles.sensitive}>⚠️ Sensible</Text> : null}
       </View>
       {acceptedMode && item?.client ? (
-        <Text style={styles.clientInfo}>
-          Client: {item.client.name} ({item.client.email})
-        </Text>
+        <View style={styles.userBlock}>
+          <UserRatingSummary user={item.client} compact showEvaluations={false} />
+        </View>
       ) : null}
-      {acceptedMode && item?.transporteur ? (
-        <Text style={styles.clientInfo}>
-          Transporteur: {item.transporteur.name}
-        </Text>
+      {!acceptedMode && item?.client && showAccept ? (
+        <View style={styles.userBlock}>
+          <UserRatingSummary user={item.client} compact showEvaluations={false} />
+        </View>
+      ) : null}
+      {item?.transporteur && (acceptedMode || showClientActions) ? (
+        <View style={styles.userBlock}>
+          <UserRatingSummary user={item.transporteur} compact showEvaluations={false} />
+        </View>
       ) : null}
       {showAccept ? (
-        <AppButton title="Accepter" variant="secondary" onPress={() => onAccept?.(item?._id)} />
+        <AppButton title="Accepter" variant="secondary" onPress={() => onAccept?.(item)} />
       ) : null}
       {showClientActions ? (
-        <View style={styles.actionRow}>
-          <AppButton
-            title={confirming ? "..." : "Confirmer"}
-            onPress={() => onConfirm?.(item?._id)}
-            loading={confirming}
-            style={styles.actionBtn}
-          />
-          <AppButton
-            title="Refuser"
-            variant="secondary"
-            onPress={() => onRefuse?.(item?._id)}
-            disabled={confirming}
-            style={styles.actionBtn}
-          />
-        </View>
+        <AppButton
+          title="Voir et confirmer"
+          onPress={() => onConfirmPress?.(item)}
+          loading={confirming}
+        />
       ) : null}
       {canDeliver ? (
         <AppButton
@@ -123,18 +118,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: theme.colors.warning,
   },
-  clientInfo: {
+  userBlock: {
     marginBottom: 10,
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
-  },
-  actionBtn: {
-    flex: 1,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   deliverBtn: {
     marginTop: 10,

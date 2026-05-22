@@ -1,28 +1,31 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Platform, RefreshControl, ScrollView, StyleSheet, ToastAndroid, View } from "react-native";
 import AppHeader from "../components/AppHeader";
+import ConfirmationModal from "../components/ConfirmationModal";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
 import RequestCard from "../components/RequestCard";
-import { confirmRequest, getClientRequests, refuseRequest } from "../service/restApiTransport";
-import { extractTransportRequestsList } from "../utils/requestStatus";
+import { getClientRequestsForDashboard } from "../service/restApiTransport";
+import {
+  extractTransportRequestsList,
+  filterActiveRequests,
+} from "../utils/requestStatus";
 import theme from "../utils/theme";
 
 export default function ClientRequestsScreen() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [actionId, setActionId] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const showToast = (msg) => {
     if (Platform.OS === "android") ToastAndroid.show(msg, ToastAndroid.SHORT);
-    else console.log(msg);
   };
 
   const loadRequests = useCallback(async () => {
     try {
-      const res = await getClientRequests();
-      setItems(extractTransportRequestsList(res));
+      const res = await getClientRequestsForDashboard();
+      setItems(filterActiveRequests(extractTransportRequestsList(res)));
     } catch {
       setItems([]);
       showToast("Erreur de chargement");
@@ -36,39 +39,16 @@ export default function ClientRequestsScreen() {
     loadRequests();
   }, [loadRequests]);
 
-  const onConfirm = async (id) => {
-    if (!id) return;
-    setActionId(id);
-    try {
-      await confirmRequest(id);
-      showToast("Demande confirmée");
-      loadRequests();
-    } catch {
-      showToast("Confirmation impossible");
-    } finally {
-      setActionId(null);
-    }
-  };
-
-  const onRefuse = async (id) => {
-    if (!id) return;
-    setActionId(id);
-    try {
-      await refuseRequest(id);
-      showToast("Demande refusée");
-      loadRequests();
-    } catch {
-      showToast("Action impossible");
-    } finally {
-      setActionId(null);
-    }
+  const handleConfirmDone = () => {
+    setSelectedRequest(null);
+    loadRequests();
   };
 
   if (loading) return <LoadingSpinner />;
 
   return (
     <View style={styles.container}>
-      <AppHeader title="Mes demandes" subtitle="Historique client" />
+      <AppHeader title="Mes demandes" subtitle="Demandes en cours uniquement" />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -91,13 +71,19 @@ export default function ClientRequestsScreen() {
               item={item}
               showAccept={false}
               showConfirmActions
-              onConfirm={onConfirm}
-              onRefuse={onRefuse}
-              confirming={actionId === item._id}
+              onConfirmPress={setSelectedRequest}
             />
           ))
         )}
       </ScrollView>
+
+      <ConfirmationModal
+        visible={!!selectedRequest}
+        request={selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        onConfirm={handleConfirmDone}
+        onRefuse={handleConfirmDone}
+      />
     </View>
   );
 }

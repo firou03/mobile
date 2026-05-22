@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, ToastAndroid, View } from "react-native";
-import { acceptTransportRequest, getPendingRequests } from "../service/restApiTransport";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { getPendingRequests } from "../service/restApiTransport";
+import AcceptRequestModal from "../components/AcceptRequestModal";
 import AppHeader from "../components/AppHeader";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -11,13 +12,14 @@ export default function RequestsScreen() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const fetchRequests = useCallback(async () => {
     try {
       const res = await getPendingRequests();
       setRequests(Array.isArray(res.data) ? res.data : []);
     } catch {
-      ToastAndroid.show("Erreur de chargement", ToastAndroid.SHORT);
+      setRequests([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -28,14 +30,9 @@ export default function RequestsScreen() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const onAccept = async (id) => {
-    try {
-      await acceptTransportRequest(id);
-      ToastAndroid.show("Demande acceptee", ToastAndroid.SHORT);
-      fetchRequests();
-    } catch {
-      ToastAndroid.show("Action impossible", ToastAndroid.SHORT);
-    }
+  const onAccepted = () => {
+    setSelectedRequest(null);
+    fetchRequests();
   };
 
   if (loading) return <LoadingSpinner />;
@@ -63,9 +60,23 @@ export default function RequestsScreen() {
         {requests.length === 0 ? (
           <EmptyState title="Aucune demande en attente" subtitle="Tirez pour actualiser." />
         ) : (
-          requests.map((item) => <RequestCard key={item._id} item={item} onAccept={onAccept} showAccept />)
+          requests.map((item) => (
+            <RequestCard
+              key={item._id}
+              item={item}
+              onAccept={setSelectedRequest}
+              showAccept
+            />
+          ))
         )}
       </ScrollView>
+
+      <AcceptRequestModal
+        visible={!!selectedRequest}
+        request={selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        onAccepted={onAccepted}
+      />
     </View>
   );
 }

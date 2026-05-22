@@ -24,11 +24,24 @@ async function adminDelete(path) {
   }));
 }
 
+async function adminPatch(path) {
+  const headers = await getAuthHeaders();
+  return axiosWithBaseFallback((baseURL) => ({
+    method: "patch",
+    url: `${baseURL}${path}`,
+    headers,
+  }));
+}
+
 export const getAdminDashboardStats = () => adminGet("/api/admin/dashboard-stats");
 
 export const getAllUsers = () => adminGet("/users/getAllUsers");
 
-export const deleteUser = (userId) => adminDelete(`/users/deleteUser/${userId}`);
+export const banUser = (userId) => adminPatch(`/users/banUser/${userId}`);
+
+export const unbanUser = (userId) => adminPatch(`/users/unbanUser/${userId}`);
+
+export const deleteUser = (userId) => banUser(userId);
 
 export const getAllReviews = () => adminGet("/api/reviews/all");
 

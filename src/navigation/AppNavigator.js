@@ -13,6 +13,7 @@ import ClientScreen from "../screens/ClientScreen";
 import ClientRequestsScreen from "../screens/ClientRequestsScreen";
 import RequestsScreen from "../screens/RequestsScreen";
 import MesRequestsScreen from "../screens/MesRequestsScreen";
+import HistoriqueScreen from "../screens/HistoriqueScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import ChatScreen from "../screens/ChatScreen";
 import TrackingScreen from "../screens/TrackingScreen";
@@ -157,6 +158,14 @@ function ClientAppDrawer() {
         }}
       />
       <Drawer.Screen
+        name="Historique"
+        component={HistoriqueScreen}
+        options={{
+          title: "Historique",
+          headerTitle: () => <HeaderTitle title="Historique" />,
+        }}
+      />
+      <Drawer.Screen
         name="Tracking"
         component={TrackingScreen}
         options={{
@@ -296,6 +305,14 @@ function TransporteurAppDrawer() {
         options={{
           title: "Mes trajets",
           headerTitle: () => <HeaderTitle title="Mes trajets" />,
+        }}
+      />
+      <Drawer.Screen
+        name="Historique"
+        component={HistoriqueScreen}
+        options={{
+          title: "Historique",
+          headerTitle: () => <HeaderTitle title="Historique" />,
         }}
       />
       <Drawer.Screen

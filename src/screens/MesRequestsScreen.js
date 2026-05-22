@@ -5,6 +5,10 @@ import AppHeader from "../components/AppHeader";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
 import RequestCard from "../components/RequestCard";
+import {
+  extractTransportRequestsList,
+  filterActiveRequests,
+} from "../utils/requestStatus";
 import theme from "../utils/theme";
 
 export default function MesRequestsScreen() {
@@ -21,7 +25,7 @@ export default function MesRequestsScreen() {
   const fetchAccepted = useCallback(async () => {
     try {
       const res = await getMesRequests();
-      setItems(Array.isArray(res.data) ? res.data : []);
+      setItems(filterActiveRequests(extractTransportRequestsList(res)));
     } catch {
       showToast("Erreur de chargement");
     } finally {
@@ -52,7 +56,7 @@ export default function MesRequestsScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader title="Mes trajets" subtitle="Demandes acceptees" />
+      <AppHeader title="Mes trajets" subtitle="En cours — livrées et annulées dans Historique" />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={

@@ -8,12 +8,17 @@ import DashboardAvatar from "../components/dashboard/DashboardAvatar";
 import StatCard from "../components/dashboard/StatCard";
 import NotificationBell from "../components/NotificationBell";
 import { AuthContext } from "../context/AuthContext";
-import { getClientRequests, getMesRequests, getPendingRequests } from "../service/restApiTransport";
+import {
+  getClientRequestsForDashboard,
+  getMesRequests,
+  getPendingRequests,
+} from "../service/restApiTransport";
 import {
   countClientAccepted,
-  countDelivered,
+  countHistory,
   countPending,
   extractTransportRequestsList,
+  filterActiveRequests,
 } from "../utils/requestStatus";
 import theme from "../utils/theme";
 
@@ -35,22 +40,24 @@ export default function HomeScreen({ navigation }) {
   const loadDashboardData = async () => {
     try {
       if (isClient) {
-        const res = await getClientRequests();
-        const requests = extractTransportRequestsList(res);
+        const res = await getClientRequestsForDashboard();
+        const all = extractTransportRequestsList(res);
+        const active = filterActiveRequests(all);
         setStats({
-          a: requests.length,
-          b: countClientAccepted(requests),
-          c: countPending(requests),
+          a: active.length,
+          b: countClientAccepted(active),
+          c: countHistory(all),
         });
         return;
       }
       const [pendingRes, mesRes] = await Promise.all([getPendingRequests(), getMesRequests()]);
       const pending = extractTransportRequestsList(pendingRes);
-      const mes = extractTransportRequestsList(mesRes);
+      const mesAll = extractTransportRequestsList(mesRes);
+      const mesActive = filterActiveRequests(mesAll);
       setStats({
         a: pending.length,
-        b: mes.length,
-        c: countDelivered(mes),
+        b: mesActive.length,
+        c: countHistory(mesAll),
       });
     } catch {
       showToast("Impossible de charger le tableau de bord");
@@ -85,10 +92,10 @@ export default function HomeScreen({ navigation }) {
             },
             {
               value: stats.c,
-              label: "En attente",
+              label: "Historique",
               icon: "time-outline",
-              color: colors.semanticRequest,
-              bgColor: colors.semanticRequestBg,
+              color: colors.semanticTracking,
+              bgColor: colors.semanticTrackingBg,
             },
           ]
         : [
@@ -108,7 +115,7 @@ export default function HomeScreen({ navigation }) {
             },
             {
               value: stats.c,
-              label: "Livrees",
+              label: "Historique",
               icon: "checkmark-done-outline",
               color: colors.semanticDelivery,
               bgColor: colors.semanticDeliveryBg,
